@@ -117,7 +117,7 @@ void drawCircle(int x0, int y0, int r, int col)
 
 void startScreen(int colBG, int colBar, int colBall)
 {
-	drawRect(59,59,480,455,colBG);
+	drawRect(59,59,455,480,colBG);
 	drawRect(246,405,5,80,colBar);
 	drawCircle(246,398,7,colBall);
 }
