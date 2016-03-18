@@ -1,5 +1,5 @@
 #include "drawScreen.h"
-
+#include <math.h>
 int initTFT()
 {
 	int Status;
@@ -96,7 +96,7 @@ void drawCircle(int x0, int y0, int r, int col)
 	int x = r;
 	int y =0;
 	int re, yChange, xChange, dec;
-	drawHorLine(&TftInstance, y0, x0-r, x0+r,col);
+	drawHorLine(x0-r, x0+r, y0, col);
 	while (y<=x)
 	{
 		y++;
