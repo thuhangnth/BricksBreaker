@@ -33,7 +33,7 @@
 /************************** Function Prototypes *****************************/
 
 int initTFT();
-void drawBrickCol(int columnIndex, int brickRemain, colBrick, colBG); //columnIndex = 0..9
+void drawBrickCol(int columnIndex, int brickRemain, int colBrick, int colBG); //columnIndex = 0..9
 void drawRect(int x, int y, int w, int l, int col); //(x,y) is the top left corner of the rectangle
 void drawHorLine(int x1, int x2, int y, int col);
 

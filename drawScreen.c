@@ -73,17 +73,20 @@ void drawRect(int x, int y, int w, int l, int col)
 	}
 }
 
-void drawBrickCol(int columnIndex, int brickRemain, colBrick, colBG)
+void drawBrickCol(int columnIndex, int brickRemain, int colBrick, int colBG)
 {
-	int x = 64 + (BRICK_LENGTH+SPACE)*colIndex;
+	int x = 64 + (BRICK_LENGTH+SPACE)*columnIndex;
 	int i;
-	for (i=0;i<MAX_ROW;i++)
+	for (i=0;i<=brickRemain;i++)
 	{
 		y = 64+(BRICK_WIDHT+SPACE)*i;
 		if (i<brickRemain)
 		{
-			drawRect(x,y,5,45,colBrick);
+			drawRect(x,y,BRICK_WIDTH,BRICK_LENGTH,colBrick);
 		}
-		
+		else
+		{
+			drawRect(x,y,BRICK_WIDTH,BRICK_LENGTH,colBG);
+		}
 	}
 }
