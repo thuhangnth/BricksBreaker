@@ -90,3 +90,27 @@ void drawBrickCol(int columnIndex, int brickRemain, int colBrick, int colBG)
 		}
 	}
 }
+
+void drawCircle(int x0, int y0, int r)
+{
+	int x = r;
+	int y =0;
+	int re, yChange, xChange, dec;
+	drawHorLine(&TftInstance, y0, x0-r, x0+r,0x000000ff);
+	while (y<=x)
+	{
+		y++;
+		re =  pow(x,2) + pow(y,2) - pow(r,2);
+		yChange = 2*y+1;
+		xChange = 1-2*x;
+		dec = 2*(re+yChange)+xChange;
+		if(dec>0)
+		{
+			x -= 1;
+		}
+		drawHorLine(x0-x, x0+x, y0+y, 0x000000ff);
+		drawHorLine(x0-x, x0+x, y0-y, 0x000000ff);
+		drawHorLine(x0-y, x0+y, y0+x, 0x000000ff);
+		drawHorLine(x0-y, x0+y, y0-x, 0x000000ff);
+	}
+}
