@@ -91,12 +91,12 @@ void drawBrickCol(int columnIndex, int brickRemain, int colBrick, int colBG)
 	}
 }
 
-void drawCircle(int x0, int y0, int r)
+void drawCircle(int x0, int y0, int r, int col)
 {
 	int x = r;
 	int y =0;
 	int re, yChange, xChange, dec;
-	drawHorLine(&TftInstance, y0, x0-r, x0+r,0x000000ff);
+	drawHorLine(&TftInstance, y0, x0-r, x0+r,col);
 	while (y<=x)
 	{
 		y++;
@@ -108,9 +108,16 @@ void drawCircle(int x0, int y0, int r)
 		{
 			x -= 1;
 		}
-		drawHorLine(x0-x, x0+x, y0+y, 0x000000ff);
-		drawHorLine(x0-x, x0+x, y0-y, 0x000000ff);
-		drawHorLine(x0-y, x0+y, y0+x, 0x000000ff);
-		drawHorLine(x0-y, x0+y, y0-x, 0x000000ff);
+		drawHorLine(x0-x, x0+x, y0+y, col);
+		drawHorLine(x0-x, x0+x, y0-y, col);
+		drawHorLine(x0-y, x0+y, y0+x, col);
+		drawHorLine(x0-y, x0+y, y0-x, col);
 	}
+}
+
+void startScreen(int colBG, int colBar, int colBall)
+{
+	drawRect(59,59,480,455,colBG);
+	drawRect(246,405,5,80,colBar);
+	drawCircle(246,398,7,colBall);
 }
