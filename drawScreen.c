@@ -1,5 +1,6 @@
 #include "drawScreen.h"
 #include <math.h>
+
 int initTFT()
 {
 	int Status;
@@ -9,7 +10,7 @@ int initTFT()
 	 * Get address of the XTft_Config structure for the given device id.
 	 */
 	TftConfigPtr = XTft_LookupConfig(TFT_DEVICE_ID);
-	if (TftConfigPtr == (XTft_Config *)NULL) 
+	if (TftConfigPtr == (XTft_Config *)NULL)
 	{
 		return XST_FAILURE;
 	}
@@ -20,7 +21,7 @@ int initTFT()
 	 */
 	Status = XTft_CfgInitialize(&TftInstance, TftConfigPtr,
 			TftConfigPtr->BaseAddress);
-	if (Status != XST_SUCCESS) 
+	if (Status != XST_SUCCESS)
 	{
 		return XST_FAILURE;
 	}
@@ -75,11 +76,11 @@ void drawRect(int x, int y, int w, int l, int col)
 
 void drawBrickCol(int columnIndex, int brickRemain, int colBrick, int colBG)
 {
-	int x = 64 + (BRICK_LENGTH+SPACE)*columnIndex;
-	int i;
+	int x = 74 + (BRICK_LENGTH+SPACE)*(columnIndex-1);
+	int i, y;
 	for (i=0;i<=brickRemain;i++)
 	{
-		y = 64+(BRICK_WIDHT+SPACE)*i;
+		y = 64+(BRICK_WIDTH+SPACE)*i;
 		if (i<brickRemain)
 		{
 			drawRect(x,y,BRICK_WIDTH,BRICK_LENGTH,colBrick);
@@ -88,6 +89,7 @@ void drawBrickCol(int columnIndex, int brickRemain, int colBrick, int colBG)
 		{
 			drawRect(x,y,BRICK_WIDTH,BRICK_LENGTH,colBG);
 		}
+
 	}
 }
 
@@ -117,7 +119,7 @@ void drawCircle(int x0, int y0, int r, int col)
 
 void startScreen(int colBG, int colBar, int colBall)
 {
-	drawRect(59,59,455,480,colBG);
-	drawRect(246,405,5,80,colBar);
-	drawCircle(246,398,7,colBall);
+	drawRect(59,59,360,395,colBG);
+	drawRect(226,405,5,80,colBar);
+	drawCircle(226,398,7,colBall);
 }
