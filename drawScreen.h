@@ -11,7 +11,7 @@
  * change all the needed parameters in one place.
  */
 #define TFT_DEVICE_ID    XPAR_TFT_0_DEVICE_ID
-#define DDR_HIGH_ADDR    XPAR_PS7_DDR_0_S_AXI_HIGHADDR 
+#define DDR_HIGH_ADDR    XPAR_PS7_DDR_0_S_AXI_HIGHADDR
 
 #ifndef DDR_HIGH_ADDR
 #warning "CHECK FOR THE VALID DDR ADDRESS IN XPARAMETERS.H"
@@ -42,8 +42,8 @@ void startScreen(int colBG, int colBar, int colBall);
 
 /************************** Variable Definitions ****************************/
 
-const int MAX_ROW = 8;
-const int BRICK_WIDTH = 5;
-const int BRICK_LENGTH = 40;
-const int SPACE = 5;
+#define MAX_ROW  8
+#define BRICK_WIDTH  5
+#define BRICK_LENGTH  40
+#define SPACE  5
 static XTft TftInstance;
