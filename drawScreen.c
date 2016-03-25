@@ -123,7 +123,7 @@ void writeString(char arr[], int x, int y)
 	int i;
 	for(i=0; i<strlen(arr); i++)
 	{
-		XTft_Write(&TftInstance,string[i]);
+		XTft_Write(&TftInstance,arr[i]);
 	}
 }
 
@@ -133,11 +133,11 @@ void startScreen(int colBG, int colScore)
 	//drawRect(226,405,5,80,colBar);
 	//drawCircle(226,398,7,colBall);
 	drawRect(475,60,40,100,colScore); //Score
-	drawRect(475,250,40,100,colScore); //Time
-	drawRect(475,350,40,100,colScore); //Speed
-	drawRect(475,450,40,100,colScore); //No of bricks left
+	drawRect(475,150,40,100,colScore); //Time
+	drawRect(475,250,40,100,colScore); //Speed
+	drawRect(475,350,40,100,colScore); //No of bricks left
 	writeString("SCORE:", 480, 70);
-	writeString("TIME:", 480, 260);
-	writeString("SPEED OF BALL:", 480, 360);
-	writeString("BRICKS LEFT:", 480, 460);
+	writeString("TIME:", 480, 160);
+	writeString("SPEED OF BALL:", 480, 260);
+	writeString("BRICKS LEFT:", 480, 360);
 }
