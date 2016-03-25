@@ -14,7 +14,7 @@
 #define ball_speed 100
 #define radius 7
 #define ballCol 0x000000FF
-#define clearCol 0x00FFFFFF
+#define clearCol 0x0000FF00
 #define MUTEX_DEVICE_ID XPAR_MUTEX_0_IF_1_DEVICE_ID
 #define MUTEX_NUM 0
 
@@ -22,7 +22,7 @@ typedef struct {
 	int dir_x,dir_y,colour,x,y,prevX,prevY;
 }ball;
 
-ball fishball;
+static ball fishball;
 
 pthread_t tid1,tid2,tid3;
 
@@ -44,13 +44,38 @@ void initBall() {
 
 int collision() {
 	int dir_x,dir_y,changed = 0;
-	if (fishball.x - radius < 60 || fishball.x + radius > 454) {
+	if ((fishball.x - radius) > getBar_x0() && (fishball.x + radius) < getBar_x1() && (fishball.y + radius) >= 410)
+	{
+		dir_x = fishball.dir_x;
+		dir_y = -1.0 * fishball.dir_y;
+		changeDir(dir_x,dir_y);
+		changed = 1;
+	}
+	if (fishball.x - radius < 60) {
+		fishball.x = 60+radius;
 		dir_x = -1.0 * fishball.dir_x;
 		dir_y = fishball.dir_y;
 		changeDir(dir_x,dir_y);
 		changed = 1;
 	}
-	if(fishball.y - radius < 60 || fishball.y + radius > 419) {
+	else if (fishball.x + radius > 454)
+	{
+		fishball.x = 454-radius;
+		dir_x = -1.0 * fishball.dir_x;
+		dir_y = fishball.dir_y;
+		changeDir(dir_x,dir_y);
+		changed = 1;
+	}
+	if(fishball.y - radius < 60) {
+		fishball.y = radius + 60;
+		dir_x = fishball.dir_x;
+		dir_y = -1.0 * fishball.dir_y;
+		changeDir(dir_x,dir_y);
+		changed = 1;
+	}
+	else if(fishball.y + radius >419)
+	{
+		fishball.y = -radius + 419;
 		dir_x = fishball.dir_x;
 		dir_y = -1.0 * fishball.dir_y;
 		changeDir(dir_x,dir_y);
@@ -105,7 +130,7 @@ void* controlBar() {
 void* disp() {
 	while(1) {
 		drawCircle(fishball.prevX,fishball.prevY,radius,clearCol);
-		drawCircle(fishball.x,fishball.y,radius,clearCol);
+		drawCircle(fishball.x,fishball.y,radius,ballCol);
 		drawBar();
 		sleep(40);
 	}
@@ -127,7 +152,8 @@ int main_prog(void) {
 	int ret;
 	initTFT();
 	initInt();
-
+	initBar();
+	startScreen(clearCol,clearCol,clearCol);
 	XStatus Status;
 
 	XMutex_Config*ConfigPtr;
@@ -156,11 +182,11 @@ int main_prog(void) {
 	}
 
 	ret = pthread_create (&tid3, NULL, (void*)disp, NULL);
-		if (ret != 0) {
-			xil_printf ("-- ERROR (%d) launching disp...\r\n", ret);
-		}
-		else {
-			xil_printf ("disp launched with ID %d \r\n", tid3);
-		}
+	if (ret != 0) {
+		xil_printf ("-- ERROR (%d) launching disp...\r\n", ret);
+	}
+	else {
+		xil_printf ("disp launched with ID %d \r\n", tid3);
+	}
 }
 
