@@ -117,9 +117,27 @@ void drawCircle(int x0, int y0, int r, int col)
 	}
 }
 
-void startScreen(int colBG, int colBar, int colBall)
+void writeString(char arr[], int x, int y)
+{
+	XTft_SetPosChar(&TftInstance, x,y);
+	int i;
+	for(i=0; i<strlen(arr); i++)
+	{
+		XTft_Write(&TftInstance,string[i]);
+	}
+}
+
+void startScreen(int colBG, int colScore)
 {
 	drawRect(60,60,360,395,colBG);
 	//drawRect(226,405,5,80,colBar);
 	//drawCircle(226,398,7,colBall);
+	drawRect(475,60,40,100,colScore); //Score
+	drawRect(475,250,40,100,colScore); //Time
+	drawRect(475,350,40,100,colScore); //Speed
+	drawRect(475,450,40,100,colScore); //No of bricks left
+	writeString("SCORE:", 480, 70);
+	writeString("TIME:", 480, 260);
+	writeString("SPEED OF BALL:", 480, 360);
+	writeString("BRICKS LEFT:", 480, 460);
 }

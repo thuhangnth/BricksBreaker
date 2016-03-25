@@ -153,7 +153,7 @@ int main_prog(void) {
 	initTFT();
 	initInt();
 	initBar();
-	startScreen(clearCol,clearCol,clearCol);
+	startScreen(clearCol,clearCol);
 	XStatus Status;
 
 	XMutex_Config*ConfigPtr;

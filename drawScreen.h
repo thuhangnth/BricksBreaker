@@ -39,8 +39,8 @@
 	void drawCircle(int x0, int y0, int r, int col); //(x0,y0) is the centre, r is radius
 	void drawRect(int x, int y, int w, int l, int col); //(x,y) is the top left corner of the rectangle
 	void drawHorLine(int x1, int x2, int y, int col);
-	void startScreen(int colBG, int colBar, int colBall);
-	
+	void startScreen(int colBG, int colScore);
+	void writeString(char arr[], int x, int y);
 	
 	/************************** Variable Definitions ****************************/
 	
