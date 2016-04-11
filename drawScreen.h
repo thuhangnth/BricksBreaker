@@ -35,7 +35,7 @@
 	/************************** Function Prototypes *****************************/
 	
 	int initTFT();
-	void drawBrickCol(int columnIndex, int brickRemain, int colBrick, int colBG); //columnIndex = 0..9
+	void drawBrickCol(int columnIndex, int brick[], int colBrick, int colBG); //columnIndex = 0..9
 	void drawCircle(int x0, int y0, int r, int col); //(x0,y0) is the centre, r is radius
 	void drawRect(int x, int y, int w, int l, int col); //(x,y) is the top left corner of the rectangle
 	void drawHorLine(int x1, int x2, int y, int col);
