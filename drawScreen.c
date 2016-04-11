@@ -130,10 +130,10 @@ void writeString(char arr[], int x, int y)
 void startScreen(int colBG)
 {
 	drawRect(60,60,360,455,colBG);
-	writeString("SCORE:", 520, 70); writeString("000", TEXT_X, TEXT_YSTART);
-	writeString("TIME:", 520, 160); writeString("00:00", TEXT_X, TEXT_YSTART +70);
-	writeString("BALL SPEED:", 520, 260); writeString("000", TEXT_X, TEXT_YSTART +140); 
-	writeString("BRICKS LEFT:", 520, 360); writeString("080", TEXT_X, TEXT_YSTART +210);
+	writeString("SCORE:", TEXT_X, TEXT_YSTART); writeString("000", TEXT_X+5, TEXT_YSTART+10);
+	writeString("TIME:", TEXT_X, TEXT_YSTART+70); writeString("00:00", TEXT_X+5, TEXT_YSTART +80);
+	writeString("BALL SPEED:", TEXT_X, TEXT_YSTART+140); writeString("000", TEXT_X+5, TEXT_YSTART +150); 
+	writeString("BRICKS LEFT:", TEXT_X, TEXT_YSTART+210); writeString("080", TEXT_X+5, TEXT_YSTART +220);
 }
 
 void toString(int number, char string[], int digit)

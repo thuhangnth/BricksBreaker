@@ -53,7 +53,7 @@
 	#define BRICK_WIDTH  5
 	#define BRICK_LENGTH  40
 	#define SPACE  5
-	#define TEXT_X 530
+	#define TEXT_X 520
 	#define TEXT_YSTART 60 
 	static XTft TftInstance;
 	
