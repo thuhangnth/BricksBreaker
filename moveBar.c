@@ -1,11 +1,13 @@
 #include "moveBar.h"
 
-#define colBG 0x00FFFFFF
+#define colBG 0x0000FF00
 #define colBar 0x00FF0000
 #define LEFT_BTN 4
 #define RIGHT_BTN 8
+#define RELEASE 0
 #define LENGTH 80
-#define DIST 10
+#define DIST 25
+#define HOLD_DIST 8
 
 XGpio gpPB; //PB device instance.
 long lastlast_int_time1 = 0, lastlast_int_time0 = 0;
@@ -19,27 +21,45 @@ typedef struct{
 
 static Bar bar;
 
-void moveBar()
+int moveBar(long time)
 {
 	if (btn==LEFT_BTN)
 	{
 		bar.dir = LEFT_BTN;
 		//Decrement x coordinate
-		bar.x = bar.x-DIST;
-		if (bar.x<60)  //Bar hits left wall
-		{
-		bar.x=60;
+		if (time < 25) {
+			bar.x = bar.x-DIST;
 		}
+		else
+		{
+			bar.x = bar.x-HOLD_DIST;
+		}
+		if (bar.x<61)  //Bar hits left wall
+		{
+		bar.x=61;
+		}
+		return 0;
 	}
 	else if (btn==RIGHT_BTN)
 	{
 		bar.dir = RIGHT_BTN;
 		//Increment x coordinate
-		bar.x = bar.x+DIST;
-		if (bar.x>454-LENGTH+1) //Bar hits right wall
-		{
-			bar.x=454-LENGTH+1;
+		if (time < 25) {
+			bar.x = bar.x+DIST;
 		}
+		else
+		{
+			bar.x = bar.x+HOLD_DIST;
+		}
+		if (bar.x>514-LENGTH) //Bar hits right wall
+		{
+			bar.x=514-LENGTH;
+		}
+		return 0;
+	}
+	else if (btn == RELEASE)
+	{
+		return 1;
 	}
 
 }
@@ -49,11 +69,23 @@ void drawBar()
 	drawRect(bar.x,bar.y,5,LENGTH,bar.col);
 	if(bar.dir==LEFT_BTN)
 	{
-		drawRect(bar.x+LENGTH,bar.y,5,DIST,colBG);
+		if (bar.x+LENGTH+DIST > 514 ) {
+			drawRect(bar.x+LENGTH,bar.y,5,514-(bar.x+LENGTH),colBG);
+		}
+		else {
+			drawRect(bar.x+LENGTH,bar.y,5,DIST,colBG);
+		}
 	}
 	else if(bar.dir == RIGHT_BTN)
 	{
-		drawRect(bar.x-DIST,bar.y,5,DIST,colBG);
+		if (bar.x - DIST < 61 )
+		{
+			drawRect(61,bar.y,5,bar.x-61,colBG);
+		}
+		else
+		{
+			drawRect(bar.x-DIST,bar.y,5,DIST,colBG);
+		}
 	}
 }
 
@@ -89,8 +121,8 @@ void gpPBIntHandler(void *arg) //Should be very short (in time). In a practical 
 	XGpio_InterruptClear(&gpPB,1);
 	long int_time = xget_clock_ticks();
 	val = XGpio_DiscreteRead(&gpPB, 1);
-	if (val>0) {
-		if (int_time - lastlast_int_time1>10 && int_time - lastlast_int_time0> 10)
+	/*if (val>0) {
+		if (int_time - lastlast_int_time1>5 && int_time - lastlast_int_time0> 5)
 		{
 			//Read the state of the push buttons.
 			btn = val;
@@ -98,13 +130,14 @@ void gpPBIntHandler(void *arg) //Should be very short (in time). In a practical 
 		lastlast_int_time1 = int_time;
 	}
 	else {
-		if (int_time - lastlast_int_time0 > 10)
+		if (int_time - lastlast_int_time0 > 5)
 		{
 			//Read the state of the push buttons.
 			btn = val;
 		}
 		lastlast_int_time0 = int_time;
-	}
+	}*/
+	btn = val;
 }
 
 int getBar_x0()
