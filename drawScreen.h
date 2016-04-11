@@ -39,8 +39,13 @@
 	void drawCircle(int x0, int y0, int r, int col); //(x0,y0) is the centre, r is radius
 	void drawRect(int x, int y, int w, int l, int col); //(x,y) is the top left corner of the rectangle
 	void drawHorLine(int x1, int x2, int y, int col);
-	void startScreen(int colBG, int colScore);
+	void startScreen(int colBG);
 	void writeString(char arr[], int x, int y);
+	void toString(int number, char string[], int digit);
+	void writeScore(int score);
+	void writeSpeed(int speed);
+	void writeBrickNo(int brickNo);
+	void writeTime(int minute, int second);
 	
 	/************************** Variable Definitions ****************************/
 	
@@ -48,6 +53,8 @@
 	#define BRICK_WIDTH  5
 	#define BRICK_LENGTH  40
 	#define SPACE  5
+	#define TEXT_X 530
+	#define TEXT_YSTART 60 
 	static XTft TftInstance;
 	
 	#endif
