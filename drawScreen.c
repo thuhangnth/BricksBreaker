@@ -76,7 +76,7 @@ void drawRect(int x, int y, int w, int l, int col)
 
 void drawBrickCol(int columnIndex, int brickRemain, int colBrick, int colBG)
 {
-	int x = 74 + (BRICK_LENGTH+SPACE)*(columnIndex-1);
+	int x = 64 + (BRICK_LENGTH+SPACE)*(columnIndex-1);
 	int i, y;
 	for (i=0;i<=brickRemain;i++)
 	{
@@ -129,15 +129,15 @@ void writeString(char arr[], int x, int y)
 
 void startScreen(int colBG, int colScore)
 {
-	drawRect(60,60,360,395,colBG);
+	drawRect(60,60,360,455,colBG);
 	//drawRect(226,405,5,80,colBar);
 	//drawCircle(226,398,7,colBall);
-	drawRect(475,60,40,100,colScore); //Score
-	drawRect(475,150,40,100,colScore); //Time
-	drawRect(475,250,40,100,colScore); //Speed
-	drawRect(475,350,40,100,colScore); //No of bricks left
-	writeString("SCORE:", 480, 70);
-	writeString("TIME:", 480, 160);
-	writeString("SPEED OF BALL:", 480, 260);
-	writeString("BRICKS LEFT:", 480, 360);
+	//drawRect(535,60,40,100,colScore); //Score
+	//drawRect(535,150,40,100,colScore); //Time
+	//drawRect(535,250,40,100,colScore); //Speed
+	//drawRect(535,350,40,100,colScore); //No of bricks left
+	writeString("SCORE:", 520, 70);
+	writeString("TIME:", 520, 160);
+	writeString("BALL SPEED:", 520, 260);
+	writeString("BRICKS LEFT:", 520, 360);
 }
