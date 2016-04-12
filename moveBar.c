@@ -1,7 +1,8 @@
 #include "moveBar.h"
 
-#define colBG 0x0000FF00
+#define colBG 0x00000000
 #define colBar 0x00FF0000
+#define colSpeed 0x00ffff00
 #define LEFT_BTN 4
 #define RIGHT_BTN 8
 #define RELEASE 0
@@ -67,6 +68,8 @@ int moveBar(long time)
 void drawBar()
 {
 	drawRect(bar.x,bar.y,5,LENGTH,bar.col);
+	drawRect(bar.x+10,bar.y,5,10,colSpeed);
+	drawRect(bar.x+60,bar.y,5,10,colSpeed);
 	if(bar.dir==LEFT_BTN)
 	{
 		if (bar.x+LENGTH+DIST > 514 ) {
