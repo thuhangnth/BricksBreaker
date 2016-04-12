@@ -50,10 +50,13 @@ void writeFishball(int dirArray[])
 {
 	fishball.dir_x = dirArray[0];
 	fishball.dir_y = dirArray[1];
+	xil_printf("Thread.c dir_x = %d, dir_y = %d\r\n",fishball.dir_x,fishball.dir_y);
 }
 
 void changeBall(int whichSide, int dirX, int dirY, int dirArray[]) {
 	//top
+	xil_printf("changeBall dir x = %d, dir y = %d\r\n",dirX,dirY);
+	xil_printf("whichSide = %d\r\n",whichSide);
 	if (whichSide == 0) {
 		dirArray[0] = dirX;
 		dirArray[1] = dirY * -1;
@@ -84,15 +87,15 @@ int detectCollisionColumn(int column, int x, int y, int dirX, int dirY,
 	if (index < 8) {
 		//collision from top/btm
 		if (x - radius <= rightBound || x + radius >= leftBound) {
-			xil_printf("a");
+			//xil_printf("a");
 			//coming from top
 			if (dirY == 1) {
-				xil_printf("a1");
+				//xil_printf("a1");
 				//index += 1;
 				if (draw[index]) {
-					xil_printf("a2");
+					//xil_printf("a2");
 					if (y + radius >= index * 20 + 65) {
-						xil_printf("a3:%d:%d",column,index);
+						//xil_printf("a3:%d:%d",column,index);
 						changeBall(0, dirX, dirY, dirArray);
 						draw[index] = 0;
 						return 1;
@@ -102,11 +105,11 @@ int detectCollisionColumn(int column, int x, int y, int dirX, int dirY,
 			//coming from btm
 			else {
 				if (draw[index]) {
-					xil_printf("b");
+					//xil_printf("b");
 					if (y - radius <= index * 20 + 79) {
 						changeBall(1, dirX, dirY, dirArray);
 						draw[index] = 0;
-						xil_printf("b1");
+						//xil_printf("b1");
 						return 1;
 					}
 				}
@@ -175,7 +178,9 @@ int detectCollisionThread(int x, int dirX) {
 void* signalThread() {
 	while (1) {
 		sem_wait(&updateBall);
+		//xil_printf("Prev Dir_x = %d, Prev Dir_Y = %d\r\n", fishball.dir_x, fishball.dir_y);
 		Mailbox_Receive(&Mbox, &fishball);
+		//xil_printf("Curr Dir_x = %d, Curr Dir_Y = %d\r\n", fishball.dir_x, fishball.dir_y);
 		thread = detectCollisionThread(fishball.nextX, fishball.dir_x);
 		sem_post(&updateBall);
 		switch (thread) {
@@ -223,7 +228,7 @@ void* brickCol_1() {
 	while (1) {
 		sem_wait(&sem_1);
 
-		changed = detectCollisionColumn(brick1.id, fishball.x, fishball.y,
+		changed = detectCollisionColumn(brick1.id, fishball.nextX, fishball.nextY,
 				fishball.dir_x, fishball.dir_y, dirArray, brick1.draw);
 		xil_printf("%d %d\r\n",brick1.id,changed);
 		if (changed) {
@@ -235,8 +240,8 @@ void* brickCol_1() {
 			sem_post(&updateBall);
 		}
 		if (!XMbox_IsFull(&Mbox) && changed) {
-			XMbox_WriteBlocking(&Mbox, &brick1, sizeof(brick1));
-			XMbox_WriteBlocking(&Mbox, &fishball, sizeof(fishball));
+			XMbox_WriteBlocking(&Mbox, &brick1, sizeof(Brick));
+			XMbox_WriteBlocking(&Mbox, &fishball, sizeof(ball));
 		}
 
 		/*sem_trywait(&sem);
@@ -271,7 +276,7 @@ void* brickCol_2() {
 	while (1) {
 		sem_wait(&sem_2);
 
-		changed = detectCollisionColumn(brick2.id, fishball.x, fishball.y,
+		changed = detectCollisionColumn(brick2.id, fishball.nextX, fishball.nextY,
 				fishball.dir_x, fishball.dir_y, dirArray, brick2.draw);
 
 		if (changed) {
@@ -281,8 +286,8 @@ void* brickCol_2() {
 			sem_post(&updateBall);
 		}
 		if (!XMbox_IsFull(&Mbox) && changed) {
-			XMbox_WriteBlocking(&Mbox, &brick2, sizeof(brick2));
-			XMbox_WriteBlocking(&Mbox, &fishball, sizeof(fishball));
+			XMbox_WriteBlocking(&Mbox, &brick2, sizeof(Brick));
+			XMbox_WriteBlocking(&Mbox, &fishball, sizeof(ball));
 		}
 
 		/*sem_wait(&sem);
@@ -314,7 +319,7 @@ void* brickCol_3() {
 	while (1) {
 		sem_wait(&sem_3);
 
-		changed = detectCollisionColumn(brick3.id, fishball.x, fishball.y,
+		changed = detectCollisionColumn(brick3.id, fishball.nextX, fishball.nextY,
 				fishball.dir_x, fishball.dir_y, dirArray, brick3.draw);
 		if (changed) {
 			sem_wait(&updateBall);
@@ -324,8 +329,8 @@ void* brickCol_3() {
 		}
 
 		if (!XMbox_IsFull(&Mbox) && changed) {
-			XMbox_WriteBlocking(&Mbox, &brick3, sizeof(brick3));
-			XMbox_WriteBlocking(&Mbox, &fishball, sizeof(fishball));
+			XMbox_WriteBlocking(&Mbox, &brick3, sizeof(Brick));
+			XMbox_WriteBlocking(&Mbox, &fishball, sizeof(ball));
 		}
 
 		/*sem_wait(&sem);
@@ -357,7 +362,7 @@ void* brickCol_4() {
 	while (1) {
 		sem_wait(&sem_4);
 
-		changed = detectCollisionColumn(brick4.id, fishball.x, fishball.y,
+		changed = detectCollisionColumn(brick4.id, fishball.nextX, fishball.nextY,
 				fishball.dir_x, fishball.dir_y, dirArray, brick4.draw);
 		if (changed) {
 			sem_wait(&updateBall);
@@ -366,8 +371,8 @@ void* brickCol_4() {
 			sem_post(&updateBall);
 		}
 		if (!XMbox_IsFull(&Mbox) && changed) {
-			XMbox_WriteBlocking(&Mbox, &brick4, sizeof(brick4));
-			XMbox_WriteBlocking(&Mbox, &fishball, sizeof(fishball));
+			XMbox_WriteBlocking(&Mbox, &brick4, sizeof(Brick));
+			XMbox_WriteBlocking(&Mbox, &fishball, sizeof(ball));
 		}
 
 		/*sem_wait(&sem);
@@ -399,7 +404,7 @@ void* brickCol_5() {
 	while (1) {
 		sem_wait(&sem_5);
 
-		changed = detectCollisionColumn(brick5.id, fishball.x, fishball.y,
+		changed = detectCollisionColumn(brick5.id, fishball.nextX, fishball.nextY,
 				fishball.dir_x, fishball.dir_y, dirArray, brick5.draw);
 		if (changed) {
 			sem_wait(&updateBall);
@@ -408,8 +413,8 @@ void* brickCol_5() {
 			sem_post(&updateBall);
 		}
 		if (!XMbox_IsFull(&Mbox) && changed) {
-			XMbox_WriteBlocking(&Mbox, &brick5, sizeof(brick5));
-			XMbox_WriteBlocking(&Mbox, &fishball, sizeof(fishball));
+			XMbox_WriteBlocking(&Mbox, &brick5, sizeof(Brick));
+			XMbox_WriteBlocking(&Mbox, &fishball, sizeof(ball));
 		}
 
 		/*sem_wait(&sem);
@@ -441,7 +446,7 @@ void* brickCol_6() {
 	while (1) {
 		sem_wait(&sem_6);
 
-		changed = detectCollisionColumn(brick6.id, fishball.x, fishball.y,
+		changed = detectCollisionColumn(brick6.id, fishball.nextX, fishball.nextY,
 				fishball.dir_x, fishball.dir_y, dirArray, brick6.draw);
 		if (changed) {
 			sem_wait(&updateBall);
@@ -457,8 +462,8 @@ void* brickCol_6() {
 			xil_printf("]");
 		}
 		if (!XMbox_IsFull(&Mbox) && changed) {
-			XMbox_WriteBlocking(&Mbox, &brick6, sizeof(brick6));
-			XMbox_WriteBlocking(&Mbox, &fishball, sizeof(fishball));
+			XMbox_WriteBlocking(&Mbox, &brick6, sizeof(Brick));
+			XMbox_WriteBlocking(&Mbox, &fishball, sizeof(ball));
 		}
 
 		/*sem_wait(&sem);
@@ -490,7 +495,7 @@ void* brickCol_7() {
 	while (1) {
 		sem_wait(&sem_7);
 
-		changed = detectCollisionColumn(brick7.id, fishball.x, fishball.y,
+		changed = detectCollisionColumn(brick7.id, fishball.nextX, fishball.nextY,
 				fishball.dir_x, fishball.dir_y, dirArray, brick7.draw);
 		if (changed) {
 			sem_wait(&updateBall);
@@ -499,8 +504,8 @@ void* brickCol_7() {
 			sem_post(&updateBall);
 		}
 		if (!XMbox_IsFull(&Mbox) && changed) {
-			XMbox_WriteBlocking(&Mbox, &brick7, sizeof(brick7));
-			XMbox_WriteBlocking(&Mbox, &fishball, sizeof(fishball));
+			XMbox_WriteBlocking(&Mbox, &brick7, sizeof(Brick));
+			XMbox_WriteBlocking(&Mbox, &fishball, sizeof(ball));
 		}
 
 		/*sem_wait(&sem);
@@ -532,7 +537,7 @@ void* brickCol_8() {
 	while (1) {
 		sem_wait(&sem_8);
 
-		changed = detectCollisionColumn(brick8.id, fishball.x, fishball.y,
+		changed = detectCollisionColumn(brick8.id, fishball.nextX, fishball.nextY,
 				fishball.dir_x, fishball.dir_y, dirArray, brick8.draw);
 		xil_printf("%d %d\r\n",brick8.id,changed);
 		if (changed) {
@@ -544,8 +549,8 @@ void* brickCol_8() {
 			sem_post(&updateBall);
 		}
 		if (!XMbox_IsFull(&Mbox) && changed) {
-			XMbox_WriteBlocking(&Mbox, &brick8, sizeof(brick8));
-			XMbox_WriteBlocking(&Mbox, &fishball, sizeof(fishball));
+			XMbox_WriteBlocking(&Mbox, &brick8, sizeof(Brick));
+			XMbox_WriteBlocking(&Mbox, &fishball, sizeof(ball));
 		}
 
 		/*sem_wait(&sem);
@@ -577,7 +582,7 @@ void* brickCol_9() {
 	while (1) {
 		sem_wait(&sem_9);
 
-		changed = detectCollisionColumn(brick9.id, fishball.x, fishball.y,
+		changed = detectCollisionColumn(brick9.id, fishball.nextX, fishball.nextY,
 				fishball.dir_x, fishball.dir_y, dirArray, brick9.draw);
 		xil_printf("%d %d\r\n",brick9.id,changed);
 		if (changed) {
@@ -590,8 +595,8 @@ void* brickCol_9() {
 		}
 		if (!XMbox_IsFull(&Mbox) && changed) {
 			xil_printf("e\r\n");
-			XMbox_WriteBlocking(&Mbox, &brick9, sizeof(brick9));
-			XMbox_WriteBlocking(&Mbox, &fishball, sizeof(fishball));
+			XMbox_WriteBlocking(&Mbox, &brick9, sizeof(Brick));
+			XMbox_WriteBlocking(&Mbox, &fishball, sizeof(ball));
 			xil_printf("f\r\n");
 		}
 
@@ -622,7 +627,7 @@ void* brickCol_10() {
 	while (1) {
 		sem_wait(&sem_10);
 
-		changed = detectCollisionColumn(brick10.id, fishball.x, fishball.y,
+		changed = detectCollisionColumn(brick10.id, fishball.nextX, fishball.nextY,
 				fishball.dir_x, fishball.dir_y, dirArray, brick10.draw);
 		if (changed) {
 			sem_wait(&updateBall);
@@ -631,8 +636,8 @@ void* brickCol_10() {
 			sem_post(&updateBall);
 		}
 		if (!XMbox_IsFull(&Mbox) && changed) {
-			XMbox_WriteBlocking(&Mbox, &brick10, sizeof(brick10));
-			XMbox_WriteBlocking(&Mbox, &fishball, sizeof(fishball));
+			XMbox_WriteBlocking(&Mbox, &brick10, sizeof(Brick));
+			XMbox_WriteBlocking(&Mbox, &fishball, sizeof(ball));
 		}
 
 		/*sem_wait(&sem);
