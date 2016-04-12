@@ -175,8 +175,8 @@ void updateXY(int x, int y) {
 	fishball.prevY = fishball.y;
 	fishball.x += x;
 	fishball.y += y;
-	fishball.nextX = fishball.x + 0.5 * x;
-	fishball.nextY = fishball.y + 0.5 * y;
+	fishball.nextX = fishball.x + x;
+	fishball.nextY = fishball.y + y;
 
 }
 
@@ -221,6 +221,7 @@ void* controlBar() {
 void* disp() {
 	int prevTime = 0;
 	int nextTime = 0;
+	int totalTime = 0;
 	int frameCount = 0;
 	while (1) {
 		frameCount += 1;
@@ -229,6 +230,7 @@ void* disp() {
 			prevTime = xget_clock_ticks();
 			writeFPS(frameCount);
 			frameCount = 0;
+			totalTime += 1;
 		}
 		pthread_mutex_lock(&mutex);
 		while (!XMbox_IsEmpty(&Mbox)) {
@@ -250,6 +252,7 @@ void* disp() {
 		drawBar();
 		xil_printf("speed = %d",ball_speed);
 		writeSpeed(ball_speed*25);
+		writeTime(totalTime/60, totalTime%60);
 		pthread_mutex_unlock(&mutex);
 		xil_printf("Angle la: %d\r\n",angle);
 		sleep(40);
