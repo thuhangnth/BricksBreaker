@@ -35,6 +35,7 @@ typedef struct {
 } Brick;
 
 volatile Brick brick;
+volatile int recalculate = 1;
 
 #define MY_CPU_ID XPAR_CPU_ID
 #define MBOX_DEVICE_ID XPAR_MBOX_0_DEVICE_ID
@@ -50,6 +51,7 @@ pthread_t tid1, tid2, tid3;
 void changeDir(int x, int y) {
 	fishball.dir_x = x;
 	fishball.dir_y = y;
+
 }
 
 void initBall() {
@@ -125,7 +127,7 @@ void updateXY(int x, int y) {
 }
 
 void* bounceBall() {
-	int recalculate = 1, distX = 0, distY = 0;
+	int distX = 0, distY = 0;
 	initBall();
 	drawCircle(fishball.x, fishball.y, radius, ballCol);
 	while (1) {
@@ -138,6 +140,7 @@ void* bounceBall() {
 		recalculate = collision();
 		if (!XMbox_IsFull(&Mbox)) {
 			XMbox_WriteBlocking(&Mbox, &fishball, sizeof(fishball));
+			//xil_printf("Ball.c SEND dir_x = %d, dir_y = %d\r\n",fishball.dir_x,fishball.dir_y);
 		}
 		pthread_mutex_unlock(&mutex);
 		sleep(40);
@@ -165,24 +168,19 @@ void* disp() {
 	while (1) {
 		pthread_mutex_lock(&mutex);
 		while (!XMbox_IsEmpty(&Mbox)) {
-			xil_printf("Reading mail..\r\n");
+			//xil_printf("Reading mail..\r\n");
 			Mailbox_ReceiveBrick(&Mbox, &brick);
 
 			Mailbox_ReceiveBall(&Mbox, &fishball);
-			xil_printf("Done reading..\r\n");
+			recalculate = 1;
+			//xil_printf("Done reading..\r\n");
 		}
-		xil_printf("brickid=%d",brick.id);
+		//xil_printf("brickid=%d",brick.id);
+		if(brick.id !=0)drawBrickCol(brick.id, &brick.draw, brick.col, clearCol);
 		if(brick.id==6)
 		{
-			int i;
-						xil_printf("[[ ");
-						for(i=0;i<8;i++)
-						{
-							xil_printf("%d, ",brick.draw[i]);
-						}
-						xil_printf("]");
+			xil_printf("ballx=%d, bally=%d",fishball.x,fishball.y);
 		}
-		if(brick.id !=0)drawBrickCol(brick.id, &brick.draw, brick.col, clearCol);
 		drawCircle(fishball.prevX, fishball.prevY, radius, clearCol);
 		drawCircle(fishball.x, fishball.y, radius, ballCol);
 		drawBar();
@@ -263,18 +261,21 @@ void Mailbox_ReceiveBrick(XMbox *MboxInstancePtr, Brick *brick) {
 	Brick temp;
 	int i;
 	XMbox_ReadBlocking(MboxInstancePtr, &temp, sizeof(Brick));
-	xil_printf("Temp id = %d\r\n",temp.id);
+	//xil_printf("Temp id = %d\r\n",temp.id);
 	brick->id = temp.id;
 	for(i=0; i<8; i++)
 	{
 		brick->draw[i] = temp.draw[i];
 	}
 	brick->col = temp.col;
-	xil_printf("Brick id = %d\r\n",brick->id);
+	//xil_printf("Brick id = %d\r\n",brick->id);
 }
 
 void Mailbox_ReceiveBall(XMbox *MboxInstancePtr, ball *fishball) {
 	ball temp;
 	XMbox_ReadBlocking(MboxInstancePtr, &temp, sizeof(ball));
 	changeDir(temp.dir_x, temp.dir_y);
+	//xil_printf("temp.dir_x = %d, temp.dir_y = %d\r\n",temp.dir_x,temp.dir_y);
+	//xil_printf("fishball.dir_x = %d, fishball.dir_y = %d\r\n",fishball->dir_x,fishball->dir_y);
+	//xil_printf("Ball.c dir_x = %d, dir_y = %d\r\n",fishball->dir_x,fishball->dir_y);
 }
