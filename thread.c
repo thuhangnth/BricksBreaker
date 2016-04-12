@@ -8,9 +8,9 @@
 
 #define MY_CPU_ID XPAR_CPU_ID
 #define MBOX_DEVICE_ID XPAR_MBOX_0_DEVICE_ID
-#define brickColour 0x00a52a2a
-#define GOLD 0x00FFD700
-#define bgColour 0x0000b200
+#define brickColour 0x00FF0000
+#define GOLD 0x00ffff00
+#define bgColour 0x00000000
 #define radius 7
 
 pthread_t tid1, tid2, tid3, tid4, tid5, tid6, tid7, tid8, tid9, tid10, tid11;
@@ -25,13 +25,19 @@ typedef struct {
 	int dir_x, dir_y, colour, x, y, prevX, prevY, nextX, nextY;
 } ball;
 
+typedef struct {
+	int score, brickLeft;
+}Result;
+
 XMbox Mbox;
 sem_t /*sem,*/ updateBall, sem_1, sem_2, sem_3, sem_4, sem_5, sem_6, sem_7, sem_8,
-		sem_9, sem_10, sem_gold;
+sem_9, sem_10, sem_gold, sem_mail;
 static ball fishball;
 volatile int thread = -1;
 volatile int score = 0;
-int to_release[] = {0,0,0,0,0,0,0,0,0,0};
+volatile int left = 80;
+int to_release[] = {1,1,1,1,1,1,1,1,1,1,1};
+volatile Result scoreBrick;
 
 static void Mailbox_Receive(XMbox *MboxInstancePtr, ball *ball_pointer) {
 	XMbox_ReadBlocking(MboxInstancePtr, ball_pointer, 36);
@@ -56,8 +62,8 @@ void writeFishball(int dirArray[])
 
 void changeBall(int whichSide, int dirX, int dirY, int dirArray[]) {
 	//top
-	xil_printf("changeBall dir x = %d, dir y = %d\r\n",dirX,dirY);
-	xil_printf("whichSide = %d\r\n",whichSide);
+	//xil_printf("changeBall dir x = %d, dir y = %d\r\n",dirX,dirY);
+	//xil_printf("whichSide = %d\r\n",whichSide);
 	if (whichSide == 0) {
 		dirArray[0] = dirX;
 		dirArray[1] = dirY * -1;
@@ -177,13 +183,14 @@ int detectCollisionThread(int x, int dirX) {
 }
 
 void* signalThread() {
+	int prev_score = 0;
 	while (1) {
 		sem_wait(&updateBall);
 		//xil_printf("Prev Dir_x = %d, Prev Dir_Y = %d\r\n", fishball.dir_x, fishball.dir_y);
 		Mailbox_Receive(&Mbox, &fishball);
 		//xil_printf("Curr Dir_x = %d, Curr Dir_Y = %d\r\n", fishball.dir_x, fishball.dir_y);
 		thread = detectCollisionThread(fishball.nextX, fishball.dir_x);
-		xil_printf("Thread: %d\r\n",thread);
+		//xil_printf("Thread: %d\r\n",thread);
 		sem_post(&updateBall);
 		switch (thread) {
 		case 0:
@@ -219,11 +226,15 @@ void* signalThread() {
 		}
 		if(score>0 && score%10==0)
 		{
-			xil_printf("Score=%d \r\n",score);
-			int i;
-			for (i=0;i<10;i++)
+			if (score>prev_score)
 			{
-				to_release[i] =1;
+				xil_printf("Score=%d \r\n",score);
+				int i;
+				for (i=0;i<10;i++)
+				{
+					to_release[i] =1;
+				}
+				prev_score=score;
 			}
 		}
 		sleep(40);
@@ -232,39 +243,62 @@ void* signalThread() {
 
 void doit(sem_t* sem, int changed, int dirArray[], Brick* b)
 {
+	changed = 0;
 	sem_wait(sem);
 		changed = detectCollisionColumn(b->id, fishball.nextX, fishball.nextY,
 				fishball.dir_x, fishball.dir_y, dirArray, b->draw);
-		xil_printf("%d %d\r\n",b->id,changed);
+		//xil_printf("%d %d\r\n",b->id,changed);
 		if (changed) {
 			xil_printf("c");
 			sem_wait(&updateBall);
 			xil_printf("d");
 			writeFishball(dirArray);
-			score += 1;
+			if(b->col == GOLD){
+				score += 2;
+			}
+			else {
+				score += 1;
+			}
+
+			left -= 1;
+			scoreBrick.score = score;
+			scoreBrick.brickLeft = left;
 			sem_post(&updateBall);
 		}
 
-		if(b->col==GOLD && to_release[(b->id)-1]==1)
-		{
-			sem_post(&sem_gold);
-			b->col=brickColour;
-		}
+
+	if(b->col==GOLD && to_release[(b->id)-1]==1)
+	{
+		sem_post(&sem_gold);
+		b->col=brickColour;
+		to_release[(b->id)-1] = 0;
+		changed =1;
+	}
+	if(to_release[(b->id)-1]==1)
+	{
 		if (sem_trywait(&sem_gold)==0)
 		{
+			xil_printf("gold - %d \r\n",b->id);
 			b->col = GOLD;
 			to_release[(b->id)-1] = 0;
+			changed =1;
 		}
-
+	}
+	if (sem_trywait(&sem_mail)==0){
 		if (!XMbox_IsFull(&Mbox) && changed) {
 			xil_printf("y\r\n");
 			XMbox_WriteBlocking(&Mbox, b, sizeof(Brick));
+			xil_printf("y1\r\n");
 			XMbox_WriteBlocking(&Mbox, &fishball, sizeof(ball));
+			xil_printf("y2\r\n");
+			XMbox_WriteBlocking(&Mbox, &scoreBrick, sizeof(Result));
 			xil_printf("z\r\n");
 		}
+		sem_post(&sem_mail);
+	}
 
 
-		/*sem_trywait(&sem);
+	/*sem_trywait(&sem);
 		 //change To Gold
 		 brick1.col = GOLD;
 		 changed = 1;
@@ -283,7 +317,7 @@ void doit(sem_t* sem, int changed, int dirArray[], Brick* b)
 		 if (!XMbox_IsFull(&Mbox)) {
 		 XMbox_WriteBlocking(&Mbox, &brick1, sizeof(brick1));
 		 }*/
-		sleep(20);
+	sleep(20);
 }
 void* brickCol_1() {
 	int changed = 0;
@@ -472,6 +506,10 @@ int main_prog(void) {
 	}
 
 	if (sem_init(&sem_gold, 1, 2)<0){
+		print("Error while initializing semaphore sem_gold. \r\n");
+	}
+
+	if (sem_init(&sem_mail, 1, 1)<0){
 		print("Error while initializing semaphore sem_gold. \r\n");
 	}
 
