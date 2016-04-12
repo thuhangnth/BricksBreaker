@@ -183,6 +183,7 @@ void* signalThread() {
 		Mailbox_Receive(&Mbox, &fishball);
 		//xil_printf("Curr Dir_x = %d, Curr Dir_Y = %d\r\n", fishball.dir_x, fishball.dir_y);
 		thread = detectCollisionThread(fishball.nextX, fishball.dir_x);
+		xil_printf("Thread: %d\r\n",thread);
 		sem_post(&updateBall);
 		switch (thread) {
 		case 0:
@@ -216,8 +217,9 @@ void* signalThread() {
 			sem_post(&sem_10);
 			break;
 		}
-		if(score!=0 && score%10==0)
+		if(score>0 && score%10==0)
 		{
+			xil_printf("Score=%d \r\n",score);
 			int i;
 			for (i=0;i<10;i++)
 			{
@@ -231,7 +233,6 @@ void* signalThread() {
 void doit(sem_t* sem, int changed, int dirArray[], Brick* b)
 {
 	sem_wait(sem);
-
 		changed = detectCollisionColumn(b->id, fishball.nextX, fishball.nextY,
 				fishball.dir_x, fishball.dir_y, dirArray, b->draw);
 		xil_printf("%d %d\r\n",b->id,changed);
@@ -242,8 +243,8 @@ void doit(sem_t* sem, int changed, int dirArray[], Brick* b)
 			writeFishball(dirArray);
 			score += 1;
 			sem_post(&updateBall);
-		} 
-		
+		}
+
 		if(b->col==GOLD && to_release[(b->id)-1]==1)
 		{
 			sem_post(&sem_gold);
@@ -254,13 +255,15 @@ void doit(sem_t* sem, int changed, int dirArray[], Brick* b)
 			b->col = GOLD;
 			to_release[(b->id)-1] = 0;
 		}
-		
+
 		if (!XMbox_IsFull(&Mbox) && changed) {
-			XMbox_WriteBlocking(&Mbox, &b, sizeof(Brick));
+			xil_printf("y\r\n");
+			XMbox_WriteBlocking(&Mbox, b, sizeof(Brick));
 			XMbox_WriteBlocking(&Mbox, &fishball, sizeof(ball));
+			xil_printf("z\r\n");
 		}
-		
-		
+
+
 		/*sem_trywait(&sem);
 		 //change To Gold
 		 brick1.col = GOLD;
@@ -289,7 +292,7 @@ void* brickCol_1() {
 	brick1.id = 1;
 	initializeBrick(&brick1);
 	while (1) {
-		doit(&sem_1, changed, &dirArray, &brick1);
+		doit(&sem_1, changed, dirArray, &brick1);
 	}
 }
 
@@ -300,7 +303,7 @@ void* brickCol_2() {
 	brick2.id = 2;
 	initializeBrick(&brick2);
 	while (1) {
-		doit(&sem_2, changed, &dirArray, &brick2);
+		doit(&sem_2, changed, dirArray, &brick2);
 	}
 }
 
@@ -311,7 +314,7 @@ void* brickCol_3() {
 	brick3.id = 3;
 	initializeBrick(&brick3);
 	while (1) {
-		doit(&sem_3, changed, &dirArray, &brick3);
+		doit(&sem_3, changed, dirArray, &brick3);
 	}
 }
 
@@ -322,7 +325,7 @@ void* brickCol_4() {
 	brick4.id = 4;
 	initializeBrick(&brick4);
 	while (1) {
-		doit(&sem_4, changed, &dirArray, &brick4);
+		doit(&sem_4, changed, dirArray, &brick4);
 	}
 }
 
@@ -333,7 +336,7 @@ void* brickCol_5() {
 	brick5.id = 5;
 	initializeBrick(&brick5);
 	while (1) {
-		doit(&sem_5, changed, &dirArray, &brick5);
+		doit(&sem_5, changed, dirArray, &brick5);
 	}
 }
 
@@ -344,7 +347,7 @@ void* brickCol_6() {
 	brick6.id = 6;
 	initializeBrick(&brick6);
 	while (1) {
-		doit(&sem_6, changed, &dirArray, &brick6);
+		doit(&sem_6, changed, dirArray, &brick6);
 	}
 }
 
@@ -355,7 +358,7 @@ void* brickCol_7() {
 	brick7.id = 7;
 	initializeBrick(&brick7);
 	while (1) {
-		doit(&sem_7, changed, &dirArray, &brick7);
+		doit(&sem_7, changed, dirArray, &brick7);
 	}
 }
 
@@ -366,7 +369,7 @@ void* brickCol_8() {
 	brick8.id = 8;
 	initializeBrick(&brick8);
 	while (1) {
-		doit(&sem_8, changed, &dirArray, &brick8);
+		doit(&sem_8, changed, dirArray, &brick8);
 	}
 }
 
@@ -377,7 +380,7 @@ void* brickCol_9() {
 	brick9.id = 9;
 	initializeBrick(&brick9);
 	while (1) {
-		doit(&sem_9, changed, &dirArray, &brick9);
+		doit(&sem_9, changed, dirArray, &brick9);
 	}
 }
 
@@ -388,7 +391,7 @@ void* brickCol_10() {
 	brick10.id = 10;
 	initializeBrick(&brick10);
 	while (1) {
-		doit(&sem_10, changed, &dirArray, &brick10);
+		doit(&sem_10, changed, dirArray, &brick10);
 	}
 }
 
@@ -467,7 +470,7 @@ int main_prog(void) {
 	if (sem_init(&sem_10, 1, 0) < 0) {
 		print("Error while initializing semaphore sem_10. \r\n");
 	}
-	
+
 	if (sem_init(&sem_gold, 1, 2)<0){
 		print("Error while initializing semaphore sem_gold. \r\n");
 	}
