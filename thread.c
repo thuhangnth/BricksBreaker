@@ -27,10 +27,11 @@ typedef struct {
 
 XMbox Mbox;
 sem_t /*sem,*/ updateBall, sem_1, sem_2, sem_3, sem_4, sem_5, sem_6, sem_7, sem_8,
-		sem_9, sem_10;
+		sem_9, sem_10, sem_gold;
 static ball fishball;
 volatile int thread = -1;
 volatile int score = 0;
+int to_release[] = {0,0,0,0,0,0,0,0,0,0};
 
 static void Mailbox_Receive(XMbox *MboxInstancePtr, ball *ball_pointer) {
 	XMbox_ReadBlocking(MboxInstancePtr, ball_pointer, 36);
@@ -215,22 +216,25 @@ void* signalThread() {
 			sem_post(&sem_10);
 			break;
 		}
+		if(score!=0 && score%10==0)
+		{
+			int i;
+			for (i=0;i<10;i++)
+			{
+				to_release[i] =1;
+			}
+		}
 		sleep(40);
 	}
 }
 
-void* brickCol_1() {
-	int changed = 0;
-	int dirArray[2];
-	Brick brick1;
-	brick1.id = 1;
-	initializeBrick(&brick1);
-	while (1) {
-		sem_wait(&sem_1);
+void doit(sem_t* sem, int changed, int dirArray[], Brick* b)
+{
+	sem_wait(sem);
 
-		changed = detectCollisionColumn(brick1.id, fishball.nextX, fishball.nextY,
-				fishball.dir_x, fishball.dir_y, dirArray, brick1.draw);
-		xil_printf("%d %d\r\n",brick1.id,changed);
+		changed = detectCollisionColumn(b->id, fishball.nextX, fishball.nextY,
+				fishball.dir_x, fishball.dir_y, dirArray, b->draw);
+		xil_printf("%d %d\r\n",b->id,changed);
 		if (changed) {
 			xil_printf("c");
 			sem_wait(&updateBall);
@@ -238,12 +242,25 @@ void* brickCol_1() {
 			writeFishball(dirArray);
 			score += 1;
 			sem_post(&updateBall);
+		} 
+		
+		if(b->col==GOLD && to_release[(b->id)-1]==1)
+		{
+			sem_post(&sem_gold);
+			b->col=brickColour;
 		}
+		if (sem_trywait(&sem_gold)==0)
+		{
+			b->col = GOLD;
+			to_release[(b->id)-1] = 0;
+		}
+		
 		if (!XMbox_IsFull(&Mbox) && changed) {
-			XMbox_WriteBlocking(&Mbox, &brick1, sizeof(Brick));
+			XMbox_WriteBlocking(&Mbox, &b, sizeof(Brick));
 			XMbox_WriteBlocking(&Mbox, &fishball, sizeof(ball));
 		}
-
+		
+		
 		/*sem_trywait(&sem);
 		 //change To Gold
 		 brick1.col = GOLD;
@@ -264,6 +281,15 @@ void* brickCol_1() {
 		 XMbox_WriteBlocking(&Mbox, &brick1, sizeof(brick1));
 		 }*/
 		sleep(20);
+}
+void* brickCol_1() {
+	int changed = 0;
+	int dirArray[2];
+	Brick brick1;
+	brick1.id = 1;
+	initializeBrick(&brick1);
+	while (1) {
+		doit(&sem_1, changed, &dirArray, &brick1);
 	}
 }
 
@@ -274,39 +300,7 @@ void* brickCol_2() {
 	brick2.id = 2;
 	initializeBrick(&brick2);
 	while (1) {
-		sem_wait(&sem_2);
-
-		changed = detectCollisionColumn(brick2.id, fishball.nextX, fishball.nextY,
-				fishball.dir_x, fishball.dir_y, dirArray, brick2.draw);
-
-		if (changed) {
-			sem_wait(&updateBall);
-			writeFishball(dirArray);
-			score += 1;
-			sem_post(&updateBall);
-		}
-		if (!XMbox_IsFull(&Mbox) && changed) {
-			XMbox_WriteBlocking(&Mbox, &brick2, sizeof(Brick));
-			XMbox_WriteBlocking(&Mbox, &fishball, sizeof(ball));
-		}
-
-		/*sem_wait(&sem);
-		 //change To Gold
-		 brick2.col = GOLD;
-		 //Send Mail
-		 if (!XMbox_IsFull(&Mbox)) {
-		 XMbox_WriteBlocking(&Mbox, &brick2, 12);
-		 }
-		 sleep(789);
-
-		 sem_post(&sem);
-		 //change Back
-		 brick2.col = brickColour;
-		 //Send Mail
-		 if (!XMbox_IsFull(&Mbox)) {
-		 XMbox_WriteBlocking(&Mbox, &brick2, 12);
-		 }*/
-		sleep(20);
+		doit(&sem_2, changed, &dirArray, &brick2);
 	}
 }
 
@@ -317,39 +311,7 @@ void* brickCol_3() {
 	brick3.id = 3;
 	initializeBrick(&brick3);
 	while (1) {
-		sem_wait(&sem_3);
-
-		changed = detectCollisionColumn(brick3.id, fishball.nextX, fishball.nextY,
-				fishball.dir_x, fishball.dir_y, dirArray, brick3.draw);
-		if (changed) {
-			sem_wait(&updateBall);
-			writeFishball(dirArray);
-			score += 1;
-			sem_post(&updateBall);
-		}
-
-		if (!XMbox_IsFull(&Mbox) && changed) {
-			XMbox_WriteBlocking(&Mbox, &brick3, sizeof(Brick));
-			XMbox_WriteBlocking(&Mbox, &fishball, sizeof(ball));
-		}
-
-		/*sem_wait(&sem);
-		 //change To Gold
-		 brick3.col = GOLD;
-		 //Send Mail
-		 if (!XMbox_IsFull(&Mbox)) {
-		 XMbox_WriteBlocking(&Mbox, &brick3, 12);
-		 }
-		 sleep(345);
-		 sem_post(&sem);
-
-		 //change Back
-		 brick3.col = brickColour;
-		 //Send Mail
-		 if (!XMbox_IsFull(&Mbox)) {
-		 XMbox_WriteBlocking(&Mbox, &brick3, 12);
-		 }*/
-		sleep(20);
+		doit(&sem_3, changed, &dirArray, &brick3);
 	}
 }
 
@@ -360,38 +322,7 @@ void* brickCol_4() {
 	brick4.id = 4;
 	initializeBrick(&brick4);
 	while (1) {
-		sem_wait(&sem_4);
-
-		changed = detectCollisionColumn(brick4.id, fishball.nextX, fishball.nextY,
-				fishball.dir_x, fishball.dir_y, dirArray, brick4.draw);
-		if (changed) {
-			sem_wait(&updateBall);
-			writeFishball(dirArray);
-			score += 1;
-			sem_post(&updateBall);
-		}
-		if (!XMbox_IsFull(&Mbox) && changed) {
-			XMbox_WriteBlocking(&Mbox, &brick4, sizeof(Brick));
-			XMbox_WriteBlocking(&Mbox, &fishball, sizeof(ball));
-		}
-
-		/*sem_wait(&sem);
-		 //change To Gold
-		 brick4.col = GOLD;
-		 //Send Mail
-		 if (!XMbox_IsFull(&Mbox)) {
-		 XMbox_WriteBlocking(&Mbox, &brick4, 12);
-		 }
-		 sleep(479);
-		 sem_post(&sem);
-
-		 //change Back
-		 brick4.col = brickColour;
-		 //Send Mail
-		 if (!XMbox_IsFull(&Mbox)) {
-		 XMbox_WriteBlocking(&Mbox, &brick4, 12);
-		 }*/
-		sleep(20);
+		doit(&sem_4, changed, &dirArray, &brick4);
 	}
 }
 
@@ -402,38 +333,7 @@ void* brickCol_5() {
 	brick5.id = 5;
 	initializeBrick(&brick5);
 	while (1) {
-		sem_wait(&sem_5);
-
-		changed = detectCollisionColumn(brick5.id, fishball.nextX, fishball.nextY,
-				fishball.dir_x, fishball.dir_y, dirArray, brick5.draw);
-		if (changed) {
-			sem_wait(&updateBall);
-			writeFishball(dirArray);
-			score += 1;
-			sem_post(&updateBall);
-		}
-		if (!XMbox_IsFull(&Mbox) && changed) {
-			XMbox_WriteBlocking(&Mbox, &brick5, sizeof(Brick));
-			XMbox_WriteBlocking(&Mbox, &fishball, sizeof(ball));
-		}
-
-		/*sem_wait(&sem);
-		 //change To Gold
-		 brick5.col = GOLD;
-		 //Send Mail
-		 if (!XMbox_IsFull(&Mbox)) {
-		 XMbox_WriteBlocking(&Mbox, &brick5, 12);
-		 }
-		 sleep(777);
-		 sem_post(&sem);
-
-		 //change Back
-		 brick5.col = brickColour;
-		 //Send Mail
-		 if (!XMbox_IsFull(&Mbox)) {
-		 XMbox_WriteBlocking(&Mbox, &brick5, 12);
-		 }*/
-		sleep(20);
+		doit(&sem_5, changed, &dirArray, &brick5);
 	}
 }
 
@@ -444,45 +344,7 @@ void* brickCol_6() {
 	brick6.id = 6;
 	initializeBrick(&brick6);
 	while (1) {
-		sem_wait(&sem_6);
-
-		changed = detectCollisionColumn(brick6.id, fishball.nextX, fishball.nextY,
-				fishball.dir_x, fishball.dir_y, dirArray, brick6.draw);
-		if (changed) {
-			sem_wait(&updateBall);
-			writeFishball(dirArray);
-			score += 1;
-			sem_post(&updateBall);
-			int i;
-			xil_printf("[ ");
-			for(i=0;i<8;i++)
-			{
-				xil_printf("%d, ",brick6.draw[i]);
-			}
-			xil_printf("]");
-		}
-		if (!XMbox_IsFull(&Mbox) && changed) {
-			XMbox_WriteBlocking(&Mbox, &brick6, sizeof(Brick));
-			XMbox_WriteBlocking(&Mbox, &fishball, sizeof(ball));
-		}
-
-		/*sem_wait(&sem);
-		 //change To Gold
-		 brick6.col = GOLD;
-		 //Send Mail
-		 if (!XMbox_IsFull(&Mbox)) {
-		 XMbox_WriteBlocking(&Mbox, &brick6, 12);
-		 }
-		 sleep(890);
-		 sem_post(&sem);
-
-		 //change Back
-		 brick6.col = brickColour;
-		 //Send Mail
-		 if (!XMbox_IsFull(&Mbox)) {
-		 XMbox_WriteBlocking(&Mbox, &brick6, 12);
-		 }*/
-		sleep(20);
+		doit(&sem_6, changed, &dirArray, &brick6);
 	}
 }
 
@@ -493,38 +355,7 @@ void* brickCol_7() {
 	brick7.id = 7;
 	initializeBrick(&brick7);
 	while (1) {
-		sem_wait(&sem_7);
-
-		changed = detectCollisionColumn(brick7.id, fishball.nextX, fishball.nextY,
-				fishball.dir_x, fishball.dir_y, dirArray, brick7.draw);
-		if (changed) {
-			sem_wait(&updateBall);
-			writeFishball(dirArray);
-			score += 1;
-			sem_post(&updateBall);
-		}
-		if (!XMbox_IsFull(&Mbox) && changed) {
-			XMbox_WriteBlocking(&Mbox, &brick7, sizeof(Brick));
-			XMbox_WriteBlocking(&Mbox, &fishball, sizeof(ball));
-		}
-
-		/*sem_wait(&sem);
-		 //change To Gold
-		 brick7.col = GOLD;
-		 //Send Mail
-		 if (!XMbox_IsFull(&Mbox)) {
-		 XMbox_WriteBlocking(&Mbox, &brick7, 12);
-		 }
-		 sleep(1123);
-		 sem_post(&sem);
-
-		 //change Back
-		 brick7.col = brickColour;
-		 //Send Mail
-		 if (!XMbox_IsFull(&Mbox)) {
-		 XMbox_WriteBlocking(&Mbox, &brick7, 12);
-		 }*/
-		sleep(20);
+		doit(&sem_7, changed, &dirArray, &brick7);
 	}
 }
 
@@ -535,41 +366,7 @@ void* brickCol_8() {
 	brick8.id = 8;
 	initializeBrick(&brick8);
 	while (1) {
-		sem_wait(&sem_8);
-
-		changed = detectCollisionColumn(brick8.id, fishball.nextX, fishball.nextY,
-				fishball.dir_x, fishball.dir_y, dirArray, brick8.draw);
-		xil_printf("%d %d\r\n",brick8.id,changed);
-		if (changed) {
-			xil_printf("c");
-			sem_wait(&updateBall);
-			xil_printf("d");
-			writeFishball(dirArray);
-			score += 1;
-			sem_post(&updateBall);
-		}
-		if (!XMbox_IsFull(&Mbox) && changed) {
-			XMbox_WriteBlocking(&Mbox, &brick8, sizeof(Brick));
-			XMbox_WriteBlocking(&Mbox, &fishball, sizeof(ball));
-		}
-
-		/*sem_wait(&sem);
-		 //change To Gold
-		 brick8.col = GOLD;
-		 //Send Mail
-		 if (!XMbox_IsFull(&Mbox)) {
-		 XMbox_WriteBlocking(&Mbox, &brick8, 12);
-		 }
-		 sleep(608);
-		 sem_post(&sem);
-
-		 //change Back
-		 brick8.col = brickColour;
-		 //Send Mail
-		 if (!XMbox_IsFull(&Mbox)) {
-		 XMbox_WriteBlocking(&Mbox, &brick8, 12);
-		 }*/
-		sleep(20);
+		doit(&sem_8, changed, &dirArray, &brick8);
 	}
 }
 
@@ -580,41 +377,7 @@ void* brickCol_9() {
 	brick9.id = 9;
 	initializeBrick(&brick9);
 	while (1) {
-		sem_wait(&sem_9);
-
-		changed = detectCollisionColumn(brick9.id, fishball.nextX, fishball.nextY,
-				fishball.dir_x, fishball.dir_y, dirArray, brick9.draw);
-		xil_printf("%d %d\r\n",brick9.id,changed);
-		if (changed) {
-			xil_printf("c");
-			sem_wait(&updateBall);
-			xil_printf("d");
-			writeFishball(dirArray);
-			score += 1;
-			sem_post(&updateBall);
-		}
-		if (!XMbox_IsFull(&Mbox) && changed) {
-			xil_printf("e\r\n");
-			XMbox_WriteBlocking(&Mbox, &brick9, sizeof(Brick));
-			XMbox_WriteBlocking(&Mbox, &fishball, sizeof(ball));
-			xil_printf("f\r\n");
-		}
-
-		/*sem_wait(&sem);
-		 //change To Gold
-		 brick9.col = GOLD;
-		 //Send Mail
-		 if (!XMbox_IsFull(&Mbox)) {
-		 XMbox_WriteBlocking(&Mbox, &brick9, 12);
-		 }
-		 sleep(945);
-		 sem_post(&sem);
-
-		 //change Back
-		 brick9.col = brickColour;
-		 //Send Mail
-		 XMbox_WriteBlocking(&Mbox, &brick9, 12);*/
-		sleep(20);
+		doit(&sem_9, changed, &dirArray, &brick9);
 	}
 }
 
@@ -625,36 +388,7 @@ void* brickCol_10() {
 	brick10.id = 10;
 	initializeBrick(&brick10);
 	while (1) {
-		sem_wait(&sem_10);
-
-		changed = detectCollisionColumn(brick10.id, fishball.nextX, fishball.nextY,
-				fishball.dir_x, fishball.dir_y, dirArray, brick10.draw);
-		if (changed) {
-			sem_wait(&updateBall);
-			writeFishball(dirArray);
-			score += 1;
-			sem_post(&updateBall);
-		}
-		if (!XMbox_IsFull(&Mbox) && changed) {
-			XMbox_WriteBlocking(&Mbox, &brick10, sizeof(Brick));
-			XMbox_WriteBlocking(&Mbox, &fishball, sizeof(ball));
-		}
-
-		/*sem_wait(&sem);
-		 //change To Gold
-		 brick10.col = GOLD;
-		 //Send Mail
-		 if (!XMbox_IsFull(&Mbox)) {
-		 XMbox_WriteBlocking(&Mbox, &brick10, 12);
-		 }
-		 sleep(1234);
-		 sem_post(&sem);
-
-		 //change Back
-		 brick10.col = brickColour;
-		 //Send Mail
-		 XMbox_WriteBlocking(&Mbox, &brick10, 12);*/
-		sleep(20);
+		doit(&sem_10, changed, &dirArray, &brick10);
 	}
 }
 
@@ -732,6 +466,10 @@ int main_prog(void) {
 
 	if (sem_init(&sem_10, 1, 0) < 0) {
 		print("Error while initializing semaphore sem_10. \r\n");
+	}
+	
+	if (sem_init(&sem_gold, 1, 2)<0){
+		print("Error while initializing semaphore sem_gold. \r\n");
 	}
 
 	ret = pthread_create(&tid11, NULL, (void*) signalThread, NULL );
