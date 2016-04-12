@@ -190,9 +190,9 @@ void writeTime(int minute, int second)
 	char string[3];
 	toString(minute, string,2);
 	writeString(string, TEXT_X+5, TEXT_YSTART+85);
-	writeString(":", TEXT_X+15, TEXT_YSTART+85);
+	writeString(":", TEXT_X+23, TEXT_YSTART+85);
 	toString(second, string,2);
-	writeString(string, TEXT_X+13, TEXT_YSTART+85);
+	writeString(string, TEXT_X+30, TEXT_YSTART+85);
 }
 void writeFPS(int frames)
 {
