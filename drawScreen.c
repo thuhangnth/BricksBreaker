@@ -76,7 +76,7 @@ void drawRect(int x, int y, int w, int l, int col)
 
 void drawBrickCol(int columnIndex, int brick[], int colBrick, int colBG)
 {
-	int x = 65 + (BRICK_LENGTH+SPACE)*columnIndex; //Index starts from 0
+	int x = 65 + (BRICK_LENGTH+SPACE)*(columnIndex-1); //Index starts from 1
 	int i, y;
 	for (i=0;i<8;i++)
 	{
@@ -127,13 +127,20 @@ void writeString(char arr[], int x, int y)
 	}
 }
 
-void startScreen(int colBG)
+void startScreen(int colBG, int colBrick)
 {
 	drawRect(60,60,360,455,colBG);
-	writeString("SCORE:", TEXT_X, TEXT_YSTART); writeString("000", TEXT_X+5, TEXT_YSTART+10);
-	writeString("TIME:", TEXT_X, TEXT_YSTART+70); writeString("00:00", TEXT_X+5, TEXT_YSTART +80);
-	writeString("BALL SPEED:", TEXT_X, TEXT_YSTART+140); writeString("000", TEXT_X+5, TEXT_YSTART +150); 
-	writeString("BRICKS LEFT:", TEXT_X, TEXT_YSTART+210); writeString("080", TEXT_X+5, TEXT_YSTART +220);
+	int brick[]={1,1,1,1,1,1,1,1};
+	int i;
+	for(i=1;i<=10;i++)
+	{
+		drawBrickCol(i,&brick,colBrick,colBG);
+	}
+	writeString("SCORE:", TEXT_X, TEXT_YSTART); writeString("000", TEXT_X+5, TEXT_YSTART+15);
+	writeString("TIME:", TEXT_X, TEXT_YSTART+70); writeString("00:00", TEXT_X+5, TEXT_YSTART +85);
+	writeString("BALL SPEED:", TEXT_X, TEXT_YSTART+140); writeString("000", TEXT_X+5, TEXT_YSTART +155);
+	writeString("BRICKS LEFT:", TEXT_X, TEXT_YSTART+210); writeString("080", TEXT_X+5, TEXT_YSTART +225);
+	writeString("FPS:", TEXT_X, TEXT_YSTART+280); writeString("00", TEXT_X+5, TEXT_YSTART + 295);
 }
 
 void toString(int number, char string[], int digit)
@@ -141,7 +148,7 @@ void toString(int number, char string[], int digit)
 	int x;
 	if(digit == 3)
 	{
-		string[3] = "\0";   //end string
+		string[3] = 0;   //end string
 		x = number/100;     //1st digit
 		string[0] = x+48;
 		x = (number/10)%10; //2nd digit
@@ -151,39 +158,45 @@ void toString(int number, char string[], int digit)
 	}
 	else if(digit ==2)
 	{
-		string[2] == "\0";  //end string
+		string[2] = 0;  //end string
 		x=number/10;        //1st digit
 		string[0] = x+48;
 		x=number%10;  		//2nd digit
-		string[1] = x+48;	
+		string[1] = x+48;
 	}
 }
 void writeScore(int score)
 {
 	char string[4];
-	toString(score, &string,3);
-	writeString(string, TEXT_X+5, TEXT_YSTART+10);
+	toString(score, string,3);
+	writeString(string, TEXT_X+5, TEXT_YSTART+15);
 }
 
 void writeSpeed(int speed)
 {
 	char string[4];
-	toString(speed, &string,3);
-	writeString(string, TEXT_X+5, TEXT_YSTART+150);
+	toString(speed, string,3);
+	writeString(string, TEXT_X+5, TEXT_YSTART+155);
 }
 
 void writeBrickNo(int brickNo)
 {
 	char string[4];
-	toString(brickNo, &string,3);
-	writeString(string, TEXT_X+5, TEXT_YSTART+220);
+	toString(brickNo, string,3);
+	writeString(string, TEXT_X+5, TEXT_YSTART+225);
 }
 void writeTime(int minute, int second)
 {
 	char string[3];
-	toString(minute, &string,2);
-	writeString(string, TEXT_X+5, TEXT_YSTART+80);
-	writeString(":", TEXT_X+15, TEXT_YSTART+80);
-	toString(second, &string,2);
-	writeString(string, TEXT_X+13, TEXT_YSTART+80);
+	toString(minute, string,2);
+	writeString(string, TEXT_X+5, TEXT_YSTART+85);
+	writeString(":", TEXT_X+15, TEXT_YSTART+85);
+	toString(second, string,2);
+	writeString(string, TEXT_X+13, TEXT_YSTART+85);
+}
+void writeFPS(int frames)
+{
+	char string[3];
+	toString(frames,string,2);
+	writeString(string, TEXT_X+5, TEXT_YSTART+295);
 }
