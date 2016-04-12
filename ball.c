@@ -13,10 +13,9 @@
 #include <sys/timer.h>
 #include <sys/types.h>
 
-#define ball_speed 100
 #define radius 7
-#define ballCol 0x000000FF
-#define clearCol 0x0000FF00
+#define ballCol 0x0000b200
+#define clearCol 0x00000000
 //#define MUTEX_DEVICE_ID XPAR_MUTEX_0_IF1_DEVICE_ID
 //#define MUTEX_NUM 0
 
@@ -34,8 +33,15 @@ typedef struct {
 	int col;
 } Brick;
 
+typedef struct {
+	int score, brickLeft;
+}Result;
+
 volatile Brick brick;
 volatile int recalculate = 1;
+volatile Result scoreBrick;
+volatile int angle = 45;
+volatile int ball_speed = 10;
 
 #define MY_CPU_ID XPAR_CPU_ID
 #define MBOX_DEVICE_ID XPAR_MBOX_0_DEVICE_ID
@@ -65,22 +71,76 @@ void initBall() {
 	fishball.nextY = 398;
 }
 
+float deg2rad(int deg)
+{
+	float rad;
+	rad = deg * M_PI / 180;
+	return rad;
+}
+
+void calCoord(int recalculate, int* X, int* Y)
+{
+	float rad;
+	rad = deg2rad(angle);
+	*X = ball_speed * sin(rad) * fishball.dir_x;
+	*Y = ball_speed* cos(rad) * fishball.dir_y;
+}
+
+void changeAngle(int plusMinus)
+{
+	//plus angle
+	if(plusMinus == 1 && angle < 75) {
+		angle += 15;
+	}
+	else if(plusMinus == 0 && angle > 15)
+	{
+		angle -= 15;
+	}
+}
+
 int collision() {
 	int dir_x, dir_y, changed = 0;
-	if ((fishball.nextX - radius) > getBar_x0()
-			&& (fishball.nextX + radius) < getBar_x1()
-			&& (fishball.nextY + radius) >= 405) {
+	//hit bar
+	int centre_x = fishball.nextX;
+	int centre_y = fishball.nextY;
+	if ((centre_x - radius) > (getBar_x0()-5)
+			&& ((centre_x + radius) < getBar_x1()+5)
+			&& ((centre_y + radius) >= 407)) {
 		dir_x = fishball.dir_x;
 		dir_y = -1.0 * fishball.dir_y;
 		changeDir(dir_x, dir_y);
+		if((centre_x+radius)< getBar_x0() + 10)
+		{
+			//decrease angle
+			changeAngle(0);
+		}
+		else if(centre_x -radius >= getBar_x0()+ 70)
+		{
+			//increase angle
+			changeAngle(1);
+		}
+		else if(centre_x +radius< getBar_x0()+20)
+		{
+			//decrease speed
+			if (ball_speed > 5)
+				ball_speed -= 4;
+		}
+		else if(centre_x -radius >= getBar_x0()+60)
+		{
+			//increase speed
+			if (ball_speed < 37)
+				ball_speed += 4;
+		}
 		changed = 1;
 	}
+	//hit left wall
 	if (fishball.nextX - radius < 60) {
 		fishball.x = 60 + radius;
 		dir_x = -1.0 * fishball.dir_x;
 		dir_y = fishball.dir_y;
 		changeDir(dir_x, dir_y);
 		changed = 1;
+	//hit right wall
 	} else if (fishball.nextX + radius > 514) {
 		fishball.x = 514 - radius;
 		dir_x = -1.0 * fishball.dir_x;
@@ -88,12 +148,14 @@ int collision() {
 		changeDir(dir_x, dir_y);
 		changed = 1;
 	}
+	//hit top wall
 	if (fishball.nextY - radius < 60) {
 		fishball.y = radius + 60;
 		dir_x = fishball.dir_x;
 		dir_y = -1.0 * fishball.dir_y;
 		changeDir(dir_x, dir_y);
 		changed = 1;
+	//hit bottom wall
 	} else if (fishball.nextY + radius > 419) {
 		fishball.y = -radius + 419;
 		dir_x = fishball.dir_x;
@@ -107,14 +169,6 @@ int collision() {
 	return 0;
 }
 
-void calCoord(int recalculate, int* X, int* Y) {
-	float scale, w;
-	w = fishball.dir_x * fishball.dir_x + fishball.dir_y * fishball.dir_y;
-	scale = ball_speed / w;
-	scale = sqrt(scale);
-	*X = scale * fishball.dir_x;
-	*Y = scale * fishball.dir_y;
-}
 
 void updateXY(int x, int y) {
 	fishball.prevX = fishball.x;
@@ -165,26 +219,39 @@ void* controlBar() {
 }
 
 void* disp() {
+	int prevTime = 0;
+	int nextTime = 0;
+	int frameCount = 0;
 	while (1) {
+		frameCount += 1;
+		nextTime = xget_clock_ticks();
+		if(nextTime - prevTime >=100) {
+			prevTime = xget_clock_ticks();
+			writeFPS(frameCount);
+			frameCount = 0;
+		}
 		pthread_mutex_lock(&mutex);
 		while (!XMbox_IsEmpty(&Mbox)) {
-			//xil_printf("Reading mail..\r\n");
+			xil_printf("Reading mail..\r\n");
 			Mailbox_ReceiveBrick(&Mbox, &brick);
 
 			Mailbox_ReceiveBall(&Mbox, &fishball);
+			Mailbox_ReceiveScore(&Mbox, &scoreBrick);
+			xil_printf("Done reading..\r\n");
 			recalculate = 1;
-			//xil_printf("Done reading..\r\n");
+			writeScore(scoreBrick.score);
+			writeBrickNo(scoreBrick.brickLeft);
+
 		}
 		//xil_printf("brickid=%d",brick.id);
 		if(brick.id !=0)drawBrickCol(brick.id, &brick.draw, brick.col, clearCol);
-		if(brick.id==6)
-		{
-			xil_printf("ballx=%d, bally=%d",fishball.x,fishball.y);
-		}
 		drawCircle(fishball.prevX, fishball.prevY, radius, clearCol);
 		drawCircle(fishball.x, fishball.y, radius, ballCol);
 		drawBar();
+		xil_printf("speed = %d",ball_speed);
+		writeSpeed(ball_speed*25);
 		pthread_mutex_unlock(&mutex);
+		xil_printf("Angle la: %d\r\n",angle);
 		sleep(40);
 	}
 }
@@ -210,7 +277,7 @@ int main_prog(void) {
 	pthread_mutexattr_init(&m_attr);
 	pthread_mutex_init(&mutex, &m_attr);
 
-	startScreen(clearCol,0x00a52a2a);
+	startScreen(clearCol,0x00FF0000);
 
 	XStatus Status;
 
@@ -278,4 +345,11 @@ void Mailbox_ReceiveBall(XMbox *MboxInstancePtr, ball *fishball) {
 	//xil_printf("temp.dir_x = %d, temp.dir_y = %d\r\n",temp.dir_x,temp.dir_y);
 	//xil_printf("fishball.dir_x = %d, fishball.dir_y = %d\r\n",fishball->dir_x,fishball->dir_y);
 	//xil_printf("Ball.c dir_x = %d, dir_y = %d\r\n",fishball->dir_x,fishball->dir_y);
+}
+
+void Mailbox_ReceiveScore(XMbox *MboxInstancePtr, Result *score) {
+	Result temp;
+	XMbox_ReadBlocking(MboxInstancePtr, &temp, sizeof(Result));
+	score->score = temp.score;
+	score->brickLeft = temp.brickLeft;
 }
