@@ -13,6 +13,7 @@
 XGpio gpPB; //PB device instance.
 long lastlast_int_time1 = 0, lastlast_int_time0 = 0;
 int btn;
+int start =0;
 
 typedef struct{
 	int x;
@@ -118,6 +119,7 @@ void initInt()
 
 void gpPBIntHandler(void *arg) //Should be very short (in time). In a practical program, don't print etc.
 {
+	start = 1;
 	unsigned char val;
 	//clear the interrupt flag. if this is not done, gpio will keep interrupting the microblaze.--
 	// --Possible to use (XGpio*)arg instead of &gpPB

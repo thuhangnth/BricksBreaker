@@ -18,7 +18,7 @@
 #define clearCol 0x00000000
 //#define MUTEX_DEVICE_ID XPAR_MUTEX_0_IF1_DEVICE_ID
 //#define MUTEX_NUM 0
-
+extern int start;
 pthread_mutex_t mutex;
 pthread_mutex_t m_attr;
 pthread_attr_t attr;
@@ -185,18 +185,21 @@ void* bounceBall() {
 	initBall();
 	drawCircle(fishball.x, fishball.y, radius, ballCol);
 	while (1) {
-		pthread_mutex_lock(&mutex);
-		if (recalculate == 1) {
-			calCoord(recalculate, &distX, &distY);
-			recalculate = 0;
+		if(start ==1)
+		{
+			pthread_mutex_lock(&mutex);
+			if (recalculate == 1) {
+				calCoord(recalculate, &distX, &distY);
+				recalculate = 0;
+			}
+			updateXY(distX, distY);
+			recalculate = collision();
+			if (!XMbox_IsFull(&Mbox)) {
+				XMbox_WriteBlocking(&Mbox, &fishball, sizeof(fishball));
+				//xil_printf("Ball.c SEND dir_x = %d, dir_y = %d\r\n",fishball.dir_x,fishball.dir_y);
+			}
+			pthread_mutex_unlock(&mutex);
 		}
-		updateXY(distX, distY);
-		recalculate = collision();
-		if (!XMbox_IsFull(&Mbox)) {
-			XMbox_WriteBlocking(&Mbox, &fishball, sizeof(fishball));
-			//xil_printf("Ball.c SEND dir_x = %d, dir_y = %d\r\n",fishball.dir_x,fishball.dir_y);
-		}
-		pthread_mutex_unlock(&mutex);
 		sleep(40);
 	}
 }
@@ -254,7 +257,7 @@ void* disp() {
 		writeSpeed(ball_speed*25);
 		writeTime(totalTime/60, totalTime%60);
 		pthread_mutex_unlock(&mutex);
-		xil_printf("Angle la: %d\r\n",angle);
+		xil_printf("Angle: %d\r\n",angle);
 		sleep(40);
 	}
 }
