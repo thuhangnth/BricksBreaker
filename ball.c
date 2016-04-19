@@ -42,6 +42,7 @@ volatile int recalculate = 1;
 volatile Result scoreBrick;
 volatile int angle = 45;
 volatile int ball_speed = 10;
+volatile int lose = 0;
 
 #define MY_CPU_ID XPAR_CPU_ID
 #define MBOX_DEVICE_ID XPAR_MBOX_0_DEVICE_ID
@@ -109,23 +110,23 @@ int collision() {
 		dir_x = fishball.dir_x;
 		dir_y = -1.0 * fishball.dir_y;
 		changeDir(dir_x, dir_y);
-		if((centre_x+radius)< getBar_x0() + 10)
+		if((centre_x/*+radius*/)< getBar_x0() + 10)
 		{
 			//decrease angle
 			changeAngle(0);
 		}
-		else if(centre_x -radius >= getBar_x0()+ 70)
+		else if(centre_x /*-radius*/ >= getBar_x0()+ 70)
 		{
 			//increase angle
 			changeAngle(1);
 		}
-		else if(centre_x +radius< getBar_x0()+20)
+		else if(centre_x /*+radius*/< getBar_x0()+20)
 		{
 			//decrease speed
 			if (ball_speed > 5)
 				ball_speed -= 4;
 		}
-		else if(centre_x -radius >= getBar_x0()+60)
+		else if(centre_x /*-radius*/ >= getBar_x0()+60)
 		{
 			//increase speed
 			if (ball_speed < 37)
@@ -162,6 +163,7 @@ int collision() {
 		dir_y = -1.0 * fishball.dir_y;
 		changeDir(dir_x, dir_y);
 		changed = 1;
+		lose = 1;
 	}
 	if (changed) {
 		return 1;
@@ -175,8 +177,8 @@ void updateXY(int x, int y) {
 	fishball.prevY = fishball.y;
 	fishball.x += x;
 	fishball.y += y;
-	fishball.nextX = fishball.x + x;
-	fishball.nextY = fishball.y + y;
+	fishball.nextX = fishball.x + 0.5*x;
+	fishball.nextY = fishball.y + 0.5*y;
 
 }
 
@@ -185,8 +187,8 @@ void* bounceBall() {
 	initBall();
 	drawCircle(fishball.x, fishball.y, radius, ballCol);
 	while (1) {
-		if(start ==1)
-		{
+		//if(start ==1)
+		//{
 			pthread_mutex_lock(&mutex);
 			if (recalculate == 1) {
 				calCoord(recalculate, &distX, &distY);
@@ -199,7 +201,7 @@ void* bounceBall() {
 				//xil_printf("Ball.c SEND dir_x = %d, dir_y = %d\r\n",fishball.dir_x,fishball.dir_y);
 			}
 			pthread_mutex_unlock(&mutex);
-		}
+		//}
 		sleep(40);
 	}
 }
@@ -226,6 +228,8 @@ void* disp() {
 	int nextTime = 0;
 	int totalTime = 0;
 	int frameCount = 0;
+	int prevScore =0;
+	int gain = 0;
 	while (1) {
 		frameCount += 1;
 		nextTime = xget_clock_ticks();
@@ -248,6 +252,13 @@ void* disp() {
 			writeBrickNo(scoreBrick.brickLeft);
 
 		}
+		gain = scoreBrick.score-prevScore;
+		if(gain==10)
+		{
+			//increase speed
+			ball_speed += 1;
+			prevScore = scoreBrick.score;
+		}
 		//xil_printf("brickid=%d",brick.id);
 		if(brick.id !=0)drawBrickCol(brick.id, &brick.draw, brick.col, clearCol);
 		drawCircle(fishball.prevX, fishball.prevY, radius, clearCol);
@@ -258,6 +269,10 @@ void* disp() {
 		writeTime(totalTime/60, totalTime%60);
 		pthread_mutex_unlock(&mutex);
 		xil_printf("Angle: %d\r\n",angle);
+		if(lose==1)
+		{
+			pthread_exit(0);
+		}
 		sleep(40);
 	}
 }
